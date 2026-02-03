@@ -1,7 +1,9 @@
 package api
 
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 /**
  * This file is a simple "smoke test" to verify that:
@@ -25,25 +27,28 @@ fun main() {
     }
 
     // Temporary test ingredients used to verify the API call
-    // These will later be replaced with user input
+    // Will replace later with user input
     val ingredients = "chicken,rice"
 
     // Limit the number of recipes returned by the API
     val number = 3
+
+    // This ensures that whatever is in 'ingredients' is correctly encoded for the URL
+    val encodedIngredients = URLEncoder.encode(ingredients, StandardCharsets.UTF_8.toString())
 
     // Build the request URL for the Spoonacular "findByIngredients" endpoint
     // ranking=2 prioritizes recipes with fewer missing ingredients
     // ignorePantry=true ignores common pantry items such as salt or water
     val urlString =
         "https://api.spoonacular.com/recipes/findByIngredients" +
-                "?ingredients=$ingredients" +
+                "?ingredients=$encodedIngredients" +
                 "&number=$number" +
                 "&ranking=2" +
                 "&ignorePantry=true" +
                 "&apiKey=$apiKey"
 
     // Create URL and open HTTP connection
-    val url = URL(urlString)
+    val url = URI.create(urlString).toURL()
     val connection = url.openConnection() as HttpURLConnection
 
     try {
