@@ -4,6 +4,8 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import org.json.JSONArray
+import model.RecipeSummary
 
 /**
  * This file is a simple "smoke test" to verify that:
@@ -33,7 +35,7 @@ fun main() {
     // Limit the number of recipes returned by the API
     val number = 3
 
-    // This ensures that whatever is in 'ingredients' is correctly encoded for the URL
+    // Encode ingredients so URL doesn't break with spaces/special characters
     val encodedIngredients = URLEncoder.encode(ingredients, StandardCharsets.UTF_8.toString())
 
     // Build the request URL for the Spoonacular "findByIngredients" endpoint
@@ -70,10 +72,60 @@ fun main() {
         // Read the raw JSON response from the API
         val response = connection.inputStream.bufferedReader().readText()
 
-        // Print part (500 characters) of the raw response for inspection and debugging
-        // This confirms the structure of the data before JSON parsing is added
-        println("Raw API response (first 500 chars):")
-        println(response.take(500))
+        // Parse JSON array from API response
+        val recipes = JSONArray(response)
+        // List to hold RecipeSummary objects built from the JSON
+        val recipeList = mutableListOf<RecipeSummary>()
+
+        // Loop through each recipe object in the JSON array
+        for (i in 0 until recipes.length()) {
+            val recipeObj = recipes.getJSONObject(i)
+
+            // Extract just the fields that are needed
+            val title = recipeObj.getString("title")
+            val usedIngredientCount = recipeObj.getInt("usedIngredientCount")
+            val missedIngredientCount = recipeObj.getInt("missedIngredientCount")
+            val missedIngredientsJson = recipeObj.getJSONArray("missedIngredients")
+            val missedIngredients = mutableListOf<String>()
+
+            for (j in 0 until missedIngredientsJson.length()) {
+                val ingredientObj = missedIngredientsJson.getJSONObject(j)
+                missedIngredients.add(ingredientObj.getString("name"))
+            }
+
+            val usedIngredientsJson = recipeObj.getJSONArray("usedIngredients")
+            val usedIngredients = mutableListOf<String>()
+
+            for (j in 0 until usedIngredientsJson.length()) {
+                usedIngredients.add(usedIngredientsJson.getJSONObject(j).getString("name"))
+            }
+
+            // Convert the JSON recipe into a data class
+            recipeList.add(
+                RecipeSummary(
+                    id = recipeObj.getInt("id"),
+                    title = title,
+                    usedIngredientCount = usedIngredientCount,
+                    usedIngredients = usedIngredients,
+                    missedIngredientCount = missedIngredientCount,
+                    missedIngredients = missedIngredients
+                )
+            )
+        }
+
+        // Display user-friendly recipe list
+        if (recipeList.isEmpty()) {
+            println("No recipes found for those ingredients.")
+        } else {
+            for ((index, recipe) in recipeList.withIndex()) {
+                println("${index + 1}. ${recipe.title}")
+                println("   Recipe ID#: ${recipe.id}")
+                println("   Used: ${recipe.usedIngredientCount}")
+                println("   Missing: ${recipe.missedIngredientCount}")
+                println("   Missing ingredients: ${recipe.missedIngredients.joinToString(", ")}")
+                println()
+            }
+        }
 
     } catch (e: Exception) {
         // Catch and display any unexpected errors during the request
