@@ -8,7 +8,7 @@ data class RecipeSummary(
     // Name/title of the recipe
     val title: String,
 
-    // Number of ingredients user already has that are used in the recipe
+    // Number of ingredients user already has
     val usedIngredientCount: Int,
 
     // Names of ingredients that are used
