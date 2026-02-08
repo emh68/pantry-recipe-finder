@@ -36,6 +36,7 @@ fun main() {
 
     if (recipes.isEmpty()) {
         println("No recipes found. Check your ingredients or API key.")
+        return
     } else {
         for ((index, recipe) in recipes.withIndex()) {
             println("${index + 1}. ${recipe.title}")
@@ -45,6 +46,33 @@ fun main() {
             println("   Missing: ${recipe.missedIngredientCount}")
             println("   Missing ingredients: ${recipe.missedIngredients.joinToString(", ")}")
             println()
+        }
+    }
+
+    // Prompt user to pick recipe by list number to see recipe instructions
+    println("Enter a recipe number to see recipe instructions (or press Enter to quit): ")
+    val choiceInput = readln()
+
+    if (choiceInput.isBlank()) {
+        return
+    }
+
+    val choice = choiceInput.toIntOrNull()
+    if (choice == null || choice < 1 || choice > recipes.size) {
+        println("Please enter a valid choice")
+        return
+    }
+
+    val selectedRecipe = recipes[choice - 1]
+    // Use selected recipe's ID to get instructions
+    val steps = client.getRecipeInstructions(selectedRecipe.id)
+
+    if (steps.isEmpty()) {
+        println("No instructions were found for this recipe.")
+    } else {
+        println("\n--- Instructions for ${selectedRecipe.title} ---")
+        for ((i, step) in steps.withIndex()) {
+            println("${i + 1}. $step")
         }
     }
 }
